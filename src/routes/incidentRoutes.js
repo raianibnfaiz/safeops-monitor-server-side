@@ -7,15 +7,13 @@ const {
 const validateObjectId = require('../middleware/validateObjectId');
 const validateRequest = require('../middleware/validateRequest');
 const { incidentsQuerySchema, resolveIncidentSchema } = require('../utils/validators');
-const { requireAuth } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-router.get('/', requireAuth, validateRequest(incidentsQuerySchema), getIncidents);
-router.post('/:id/acknowledge', requireAuth, validateObjectId(), acknowledgeIncident);
+router.get('/', validateRequest(incidentsQuerySchema), getIncidents);
+router.post('/:id/acknowledge', validateObjectId(), acknowledgeIncident);
 router.post(
   '/:id/resolve',
-  requireAuth,
   validateObjectId(),
   validateRequest(resolveIncidentSchema),
   resolveIncident

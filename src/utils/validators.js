@@ -9,25 +9,6 @@ const eventSeverities = ['WARNING', 'HIGH', 'CRITICAL'];
 const workerStatuses = ['ACTIVE', 'OFFLINE', 'ON_BREAK'];
 const deviceStatuses = ['ACTIVE', 'INACTIVE', 'MAINTENANCE'];
 
-const registerSchema = z.object({
-  body: z.object({
-    name: z.string().trim().min(2, 'Name must be at least 2 characters long'),
-    email: z.string().trim().email('Email must be valid'),
-    password: z.string().min(6, 'Password must be at least 6 characters long'),
-  }),
-  query: z.object({}),
-  params: z.object({}),
-});
-
-const loginSchema = z.object({
-  body: z.object({
-    email: z.string().trim().email('Email must be valid'),
-    password: z.string().min(1, 'Password is required'),
-  }),
-  query: z.object({}),
-  params: z.object({}),
-});
-
 const workersQuerySchema = z.object({
   body: z.object({}),
   params: z.object({}),
@@ -91,8 +72,6 @@ module.exports = {
   eventSeverities,
   workerStatuses,
   deviceStatuses,
-  registerSchema,
-  loginSchema,
   workersQuerySchema,
   incidentsQuerySchema,
   resolveIncidentSchema,
