@@ -34,6 +34,10 @@ const acknowledgeIncident = asyncHandler(async (req, res) => {
     throw new AppError('Resolved incidents cannot be acknowledged', 400);
   }
 
+  if (incident.status === 'ACKNOWLEDGED') {
+    throw new AppError('Incident is already acknowledged', 400);
+  }
+
   incident.status = 'ACKNOWLEDGED';
   incident.acknowledgedAt = new Date();
 
@@ -55,6 +59,10 @@ const resolveIncident = asyncHandler(async (req, res) => {
 
   if (!incident) {
     throw new AppError('Incident not found', 404);
+  }
+
+  if (incident.status === 'RESOLVED') {
+    throw new AppError('Incident is already resolved', 400);
   }
 
   incident.status = 'RESOLVED';

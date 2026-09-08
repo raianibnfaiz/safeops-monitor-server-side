@@ -7,7 +7,11 @@ const {
   EVENT_SEVERITY_MAP,
   INCIDENT_CREATING_SEVERITIES,
 } = require('../utils/constants');
+const { parseNumberEnv } = require('../config/env');
 const { emitIncident, emitSafetyEvent } = require('./socketService');
+
+const SIMULATOR_MIN_MS = parseNumberEnv(process.env.SIMULATOR_MIN_MS, 15000);
+const SIMULATOR_MAX_MS = parseNumberEnv(process.env.SIMULATOR_MAX_MS, 20000);
 
 const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
@@ -31,6 +35,13 @@ const createIncidentFromEvent = async (savedEvent) => {
     return null;
   }
 
+  const worker = await Worker.findById(savedEvent.worker);
+  const location = {
+    zone: worker?.location?.zone || 'UNKNOWN',
+    lat: worker?.location?.lat || 0,
+    lng: worker?.location?.lng || 0,
+  };
+
   const incident = await Incident.create({
     type: savedEvent.eventType,
     title: `${savedEvent.eventType.replace('_', ' ')} incident`,
@@ -39,6 +50,7 @@ const createIncidentFromEvent = async (savedEvent) => {
     worker: savedEvent.worker,
     device: savedEvent.device,
     sourceEvent: savedEvent._id,
+    location,
   });
 
   const populatedIncident = await incident.populate('worker device sourceEvent');
@@ -70,6 +82,11 @@ const generateSafetyEvent = async () => {
     temperature: Number((36 + Math.random() * 8).toFixed(1)),
     geofenceStatus: eventType === 'GEOFENCE_BREACH' ? 'OUTSIDE' : 'INSIDE',
     movementScore: randomInt(0, 100),
+    location: {
+      zone,
+      lat: worker.location?.lat || 0,
+      lng: worker.location?.lng || 0,
+    },
   };
 
   const event = await Event.create({
@@ -95,13 +112,20 @@ const generateSafetyEvent = async () => {
 };
 
 let simulatorTimer;
+let simulatorState = {
+  isRunning: false,
+  lastGeneratedAt: null,
+  nextDelayMs: null,
+};
 
 const scheduleNext = () => {
-  const delay = randomInt(15000, 20000);
+  const delay = randomInt(SIMULATOR_MIN_MS, SIMULATOR_MAX_MS);
+  simulatorState.nextDelayMs = delay;
 
   simulatorTimer = setTimeout(async () => {
     try {
       await generateSafetyEvent();
+      simulatorState.lastGeneratedAt = new Date().toISOString();
     } catch (error) {
       console.error('Event simulator error:', error.message);
     } finally {
@@ -115,6 +139,7 @@ const startEventSimulator = () => {
     return;
   }
 
+  simulatorState.isRunning = true;
   console.log('SafeOps event simulator started');
   scheduleNext();
 };
@@ -124,9 +149,18 @@ const stopEventSimulator = () => {
     clearTimeout(simulatorTimer);
     simulatorTimer = null;
   }
+
+  simulatorState = {
+    ...simulatorState,
+    isRunning: false,
+    nextDelayMs: null,
+  };
 };
+
+const getSimulatorState = () => ({ ...simulatorState });
 
 module.exports = {
   startEventSimulator,
   stopEventSimulator,
+  getSimulatorState,
 };

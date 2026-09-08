@@ -2,6 +2,12 @@ const mongoose = require('mongoose');
 
 const workerSchema = new mongoose.Schema(
   {
+    workerId: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
     name: {
       type: String,
       required: true,

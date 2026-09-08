@@ -1,13 +1,13 @@
 const express = require('express');
-const { getWorkers, getWorkerById } = require('../controllers/workerController');
+const { getDevices, getDeviceById } = require('../controllers/deviceController');
 const validateObjectId = require('../middleware/validateObjectId');
 const validateRequest = require('../middleware/validateRequest');
-const { workersQuerySchema } = require('../utils/validators');
+const { devicesQuerySchema } = require('../utils/validators');
 const { requireAuth } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-router.get('/', requireAuth, validateRequest(workersQuerySchema), getWorkers);
-router.get('/:id', requireAuth, validateObjectId(), getWorkerById);
+router.get('/', requireAuth, validateRequest(devicesQuerySchema), getDevices);
+router.get('/:id', requireAuth, validateObjectId(), getDeviceById);
 
 module.exports = router;

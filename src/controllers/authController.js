@@ -4,7 +4,11 @@ const AppError = require('../utils/appError');
 const asyncHandler = require('../middleware/asyncHandler');
 
 const signToken = (payload) => {
-  const secret = process.env.JWT_SECRET || 'safeops-dev-secret';
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new AppError('JWT_SECRET is not configured', 500);
+  }
+
   return jwt.sign(payload, secret, { expiresIn: '7d' });
 };
 
@@ -71,7 +75,15 @@ const login = asyncHandler(async (req, res) => {
   });
 });
 
+const logout = asyncHandler(async (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Logout successful. Remove token from client storage.',
+  });
+});
+
 module.exports = {
   register,
   login,
+  logout,
 };

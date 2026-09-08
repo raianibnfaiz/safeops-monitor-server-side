@@ -26,9 +26,14 @@ const emitIncident = (incidentPayload) => {
   }
 };
 
+const getSocketStats = () => ({
+  clientsConnected: ioInstance ? ioInstance.engine.clientsCount : 0,
+});
+
 module.exports = {
   initSocket,
   getIO,
   emitSafetyEvent,
   emitIncident,
+  getSocketStats,
 };

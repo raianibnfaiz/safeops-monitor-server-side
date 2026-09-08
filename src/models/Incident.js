@@ -43,6 +43,11 @@ const incidentSchema = new mongoose.Schema(
       ref: 'Event',
       required: true,
     },
+    location: {
+      zone: { type: String, required: true },
+      lat: { type: Number, required: true },
+      lng: { type: Number, required: true },
+    },
     acknowledgedAt: Date,
     resolvedAt: Date,
     resolutionNote: {
