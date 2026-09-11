@@ -2,7 +2,8 @@ const Event = require('../models/Event');
 const asyncHandler = require('../middleware/asyncHandler');
 
 const getRecentEvents = asyncHandler(async (req, res) => {
-  const limit = req.query.limit || 20;
+  const eventLimit = req.query.limit || 20;
+  const workerObjectId = req.query.workerId;
   const filter = {};
 
   if (req.query.severity) {
@@ -13,14 +14,14 @@ const getRecentEvents = asyncHandler(async (req, res) => {
     filter.eventType = req.query.eventType;
   }
 
-  if (req.query.workerId) {
-    filter.worker = req.query.workerId;
+  if (workerObjectId) {
+    filter.worker = workerObjectId;
   }
 
   const events = await Event.find(filter)
     .populate('worker device')
     .sort({ createdAt: -1 })
-    .limit(limit);
+    .limit(eventLimit);
 
   res.status(200).json({
     success: true,

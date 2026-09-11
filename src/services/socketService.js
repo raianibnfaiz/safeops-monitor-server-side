@@ -1,9 +1,9 @@
-let ioInstance;
+let socketServer;
 
-const initSocket = (io) => {
-  ioInstance = io;
+const initializeSocket = (socketIoServer) => {
+  socketServer = socketIoServer;
 
-  io.on('connection', (socket) => {
+  socketIoServer.on('connection', (socket) => {
     console.log(`Client connected: ${socket.id}`);
 
     socket.on('disconnect', () => {
@@ -12,27 +12,27 @@ const initSocket = (io) => {
   });
 };
 
-const getIO = () => ioInstance;
+const getSocketServer = () => socketServer;
 
 const emitSafetyEvent = (eventPayload) => {
-  if (ioInstance) {
-    ioInstance.emit('safety:event', eventPayload);
+  if (socketServer) {
+    socketServer.emit('safety:event', eventPayload);
   }
 };
 
 const emitIncident = (incidentPayload) => {
-  if (ioInstance) {
-    ioInstance.emit('safety:incident', incidentPayload);
+  if (socketServer) {
+    socketServer.emit('safety:incident', incidentPayload);
   }
 };
 
 const getSocketStats = () => ({
-  clientsConnected: ioInstance ? ioInstance.engine.clientsCount : 0,
+  clientsConnected: socketServer ? socketServer.engine.clientsCount : 0,
 });
 
 module.exports = {
-  initSocket,
-  getIO,
+  initializeSocket,
+  getSocketServer,
   emitSafetyEvent,
   emitIncident,
   getSocketStats,

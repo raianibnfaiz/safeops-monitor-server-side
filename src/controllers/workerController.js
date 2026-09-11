@@ -21,11 +21,11 @@ const getWorkers = asyncHandler(async (req, res) => {
 
   const workers = await Worker.find(filter).populate('assignedDevice').sort({ createdAt: -1 });
 
-  const filteredWorkers = deviceStatus
+  const workersMatchingDeviceStatus = deviceStatus
     ? workers.filter((worker) => worker.assignedDevice?.status === deviceStatus)
     : workers;
 
-  const data = filteredWorkers.map((worker) => ({
+  const workerSummaries = workersMatchingDeviceStatus.map((worker) => ({
     id: worker._id,
     workerId: worker.workerId,
     name: worker.name,
@@ -41,8 +41,8 @@ const getWorkers = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    count: data.length,
-    data,
+    count: workerSummaries.length,
+    data: workerSummaries,
   });
 });
 

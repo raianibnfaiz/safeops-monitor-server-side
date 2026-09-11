@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 
 const app = require('../src/app');
+const User = require('../src/models/User');
 const Worker = require('../src/models/Worker');
 const Device = require('../src/models/Device');
 const Event = require('../src/models/Event');
@@ -10,9 +11,26 @@ const Incident = require('../src/models/Incident');
 
 describe('SafeOps backend API', () => {
   let mongoServer;
+  let authToken;
   let incidentId;
 
-  const seedCoreData = async () => {
+  const registerAndLogin = async () => {
+    const email = `admin+${Date.now()}@safeops.local`;
+    await request(app).post('/api/auth/register').send({
+      name: 'Admin User',
+      email,
+      password: 'secret123',
+    });
+
+    const loginResponse = await request(app).post('/api/auth/login').send({
+      email,
+      password: 'secret123',
+    });
+
+    return loginResponse.body.data.token;
+  };
+
+  const seedTestFixtures = async () => {
     const worker = await Worker.create({
       workerId: 'W-TEST-001',
       name: 'Test Worker',
@@ -63,6 +81,8 @@ describe('SafeOps backend API', () => {
   };
 
   beforeAll(async () => {
+    process.env.JWT_SECRET = 'test-jwt-secret';
+
     mongoServer = await MongoMemoryServer.create();
     await mongoose.connect(mongoServer.getUri());
   });
@@ -75,17 +95,60 @@ describe('SafeOps backend API', () => {
 
   beforeEach(async () => {
     await Promise.all([
+      User.deleteMany({}),
       Worker.deleteMany({}),
       Device.deleteMany({}),
       Event.deleteMany({}),
       Incident.deleteMany({}),
     ]);
 
-    await seedCoreData();
+    authToken = await registerAndLogin();
+    await seedTestFixtures();
+  });
+
+  test('registers a user successfully', async () => {
+    const email = `user+${Date.now()}@safeops.local`;
+
+    const res = await request(app).post('/api/auth/register').send({
+      name: 'Another User',
+      email,
+      password: 'secret123',
+    });
+
+    expect(res.statusCode).toBe(201);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.token).toBeDefined();
+  });
+
+  test('rejects login with wrong password', async () => {
+    const userEmail = `check+${Date.now()}@safeops.local`;
+
+    await request(app).post('/api/auth/register').send({
+      name: 'Check User',
+      email: userEmail,
+      password: 'secret123',
+    });
+
+    const res = await request(app).post('/api/auth/login').send({
+      email: userEmail,
+      password: 'wrong-password',
+    });
+
+    expect(res.statusCode).toBe(401);
+    expect(res.body.success).toBe(false);
+  });
+
+  test('blocks protected route without token', async () => {
+    const res = await request(app).get('/api/workers');
+
+    expect(res.statusCode).toBe(401);
+    expect(res.body.success).toBe(false);
   });
 
   test('lists workers with required summary fields', async () => {
-    const res = await request(app).get('/api/workers');
+    const res = await request(app)
+      .get('/api/workers')
+      .set('Authorization', `Bearer ${authToken}`);
 
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
@@ -95,7 +158,9 @@ describe('SafeOps backend API', () => {
   });
 
   test('lists devices', async () => {
-    const res = await request(app).get('/api/devices');
+    const res = await request(app)
+      .get('/api/devices')
+      .set('Authorization', `Bearer ${authToken}`);
 
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
@@ -103,7 +168,9 @@ describe('SafeOps backend API', () => {
   });
 
   test('returns filtered incidents', async () => {
-    const res = await request(app).get('/api/incidents?status=OPEN');
+    const res = await request(app)
+      .get('/api/incidents?status=OPEN')
+      .set('Authorization', `Bearer ${authToken}`);
 
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
@@ -111,21 +178,26 @@ describe('SafeOps backend API', () => {
   });
 
   test('acknowledges then resolves an incident', async () => {
-    const ackRes = await request(app).post(`/api/incidents/${incidentId}/acknowledge`);
+    const acknowledgeResponse = await request(app)
+      .post(`/api/incidents/${incidentId}/acknowledge`)
+      .set('Authorization', `Bearer ${authToken}`);
 
-    expect(ackRes.statusCode).toBe(200);
-    expect(ackRes.body.data.status).toBe('ACKNOWLEDGED');
+    expect(acknowledgeResponse.statusCode).toBe(200);
+    expect(acknowledgeResponse.body.data.status).toBe('ACKNOWLEDGED');
 
-    const resolveRes = await request(app)
+    const resolveResponse = await request(app)
       .post(`/api/incidents/${incidentId}/resolve`)
+      .set('Authorization', `Bearer ${authToken}`)
       .send({ resolutionNote: 'Issue handled by supervisor' });
 
-    expect(resolveRes.statusCode).toBe(200);
-    expect(resolveRes.body.data.status).toBe('RESOLVED');
+    expect(resolveResponse.statusCode).toBe(200);
+    expect(resolveResponse.body.data.status).toBe('RESOLVED');
   });
 
   test('returns dashboard health and visualization data', async () => {
-    const res = await request(app).get('/api/dashboard');
+    const res = await request(app)
+      .get('/api/dashboard')
+      .set('Authorization', `Bearer ${authToken}`);
 
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);

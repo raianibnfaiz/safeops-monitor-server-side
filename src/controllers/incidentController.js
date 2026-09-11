@@ -4,13 +4,13 @@ const asyncHandler = require('../middleware/asyncHandler');
 const { emitIncident } = require('../services/socketService');
 
 const getIncidents = asyncHandler(async (req, res) => {
-  const { status, severity, type, workerId } = req.query;
+  const { status, severity, type, workerId: workerObjectId } = req.query;
   const filter = {};
 
   if (status) filter.status = status;
   if (severity) filter.severity = severity;
   if (type) filter.type = type;
-  if (workerId) filter.worker = workerId;
+  if (workerObjectId) filter.worker = workerObjectId;
 
   const incidents = await Incident.find(filter)
     .populate('worker device sourceEvent')
@@ -43,13 +43,13 @@ const acknowledgeIncident = asyncHandler(async (req, res) => {
 
   await incident.save();
 
-  const payload = await incident.populate('worker device sourceEvent');
-  emitIncident(payload);
+  const populatedIncident = await incident.populate('worker device sourceEvent');
+  emitIncident(populatedIncident);
 
   res.status(200).json({
     success: true,
     message: 'Incident acknowledged',
-    data: payload,
+    data: populatedIncident,
   });
 });
 
@@ -71,13 +71,13 @@ const resolveIncident = asyncHandler(async (req, res) => {
 
   await incident.save();
 
-  const payload = await incident.populate('worker device sourceEvent');
-  emitIncident(payload);
+  const populatedIncident = await incident.populate('worker device sourceEvent');
+  emitIncident(populatedIncident);
 
   res.status(200).json({
     success: true,
     message: 'Incident resolved',
-    data: payload,
+    data: populatedIncident,
   });
 });
 

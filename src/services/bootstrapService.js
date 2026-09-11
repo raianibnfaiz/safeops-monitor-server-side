@@ -24,12 +24,13 @@ const sampleWorkers = [
   location: { zone, lat, lng },
 }));
 
-const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+const randomIntegerInRange = (minimum, maximum) =>
+  Math.floor(Math.random() * (maximum - minimum + 1)) + minimum;
 
-const pickRandom = (arr) => arr[randomInt(0, arr.length - 1)];
+const pickRandomItem = (items) => items[randomIntegerInRange(0, items.length - 1)];
 
-const generateEventMessage = (eventType, workerName, zone) => {
-  const map = {
+const buildSafetyEventMessage = (eventType, workerName, zone) => {
+  const eventMessageTemplates = {
     HIGH_TEMPERATURE: `${workerName} reported unsafe body temperature near ${zone}`,
     LOW_BATTERY: `${workerName}'s wearable battery is critically low in ${zone}`,
     FALL_DETECTED: `Possible fall detected for ${workerName} at ${zone}`,
@@ -38,7 +39,7 @@ const generateEventMessage = (eventType, workerName, zone) => {
     SOS: `${workerName} triggered SOS emergency alert from ${zone}`,
   };
 
-  return map[eventType];
+  return eventMessageTemplates[eventType];
 };
 
 const ensureBaselineData = async () => {
@@ -66,22 +67,26 @@ const ensureBaselineData = async () => {
   );
 
   const historicalEvents = [];
-  for (let i = 0; i < 60; i += 1) {
-    const worker = pickRandom(workers);
-    const device = devices.find((d) => String(d.worker) === String(worker._id)) || pickRandom(devices);
-    const eventType = pickRandom(EVENT_TYPES);
+  for (let eventIndex = 0; eventIndex < 60; eventIndex += 1) {
+    const worker = pickRandomItem(workers);
+    const assignedDevice =
+      devices.find((device) => String(device.worker) === String(worker._id)) ||
+      pickRandomItem(devices);
+    const eventType = pickRandomItem(EVENT_TYPES);
     const severity = EVENT_SEVERITY_MAP[eventType];
     const temperature = Number((35 + Math.random() * 8).toFixed(1));
-    const batteryLevel = randomInt(8, 95);
+    const batteryLevel = randomIntegerInRange(8, 95);
     const geofenceStatus = eventType === 'GEOFENCE_BREACH' ? 'OUTSIDE' : 'INSIDE';
-    const createdAt = new Date(Date.now() - randomInt(1, 7 * 24 * 60 * 60) * 1000);
+    const createdAt = new Date(
+      Date.now() - randomIntegerInRange(1, 7 * 24 * 60 * 60) * 1000
+    );
 
     historicalEvents.push({
       eventType,
       severity,
-      message: generateEventMessage(eventType, worker.name, worker.location.zone),
+      message: buildSafetyEventMessage(eventType, worker.name, worker.location.zone),
       worker: worker._id,
-      device: device._id,
+      device: assignedDevice._id,
       metadata: {
         temperature,
         batteryLevel,
@@ -94,17 +99,24 @@ const ensureBaselineData = async () => {
 
   const events = await Event.insertMany(historicalEvents);
 
-  const incidentsToCreate = events
+  const seedIncidents = events
     .filter((event) => INCIDENT_CREATING_SEVERITIES.includes(event.severity))
     .slice(0, 15)
-    .map((event, idx) => {
-      const worker = workers.find((w) => String(w._id) === String(event.worker));
+    .map((event, eventIndex) => {
+      const worker = workers.find(
+        (candidateWorker) => String(candidateWorker._id) === String(event.worker)
+      );
       return {
         type: event.eventType,
         title: `${event.eventType.replaceAll('_', ' ')} incident`,
         description: event.message,
         severity: event.severity === 'CRITICAL' ? 'CRITICAL' : 'HIGH',
-        status: idx % 3 === 0 ? 'RESOLVED' : idx % 2 === 0 ? 'ACKNOWLEDGED' : 'OPEN',
+        status:
+          eventIndex % 3 === 0
+            ? 'RESOLVED'
+            : eventIndex % 2 === 0
+              ? 'ACKNOWLEDGED'
+              : 'OPEN',
         worker: event.worker,
         device: event.device,
         sourceEvent: event._id,
@@ -116,8 +128,8 @@ const ensureBaselineData = async () => {
       };
     });
 
-  if (incidentsToCreate.length > 0) {
-    await Incident.insertMany(incidentsToCreate);
+  if (seedIncidents.length > 0) {
+    await Incident.insertMany(seedIncidents);
   }
 
   console.log('Baseline workers, devices, events, and incidents created');

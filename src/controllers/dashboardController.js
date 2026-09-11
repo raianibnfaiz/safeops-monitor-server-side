@@ -8,15 +8,15 @@ const { getSimulatorState } = require('../services/simulatorService');
 
 const getDashboardSummary = asyncHandler(async (req, res) => {
   const [
-    workersTotal,
-    activeWorkers,
-    devicesTotal,
-    onlineDevices,
-    offlineDevices,
-    openIncidents,
-    acknowledgedIncidents,
-    resolvedIncidents,
-    criticalEvents,
+    totalWorkerCount,
+    activeWorkerCount,
+    totalDeviceCount,
+    activeDeviceCount,
+    nonActiveDeviceCount,
+    openIncidentCount,
+    acknowledgedIncidentCount,
+    resolvedIncidentCount,
+    criticalEventCount,
     recentIncidents,
     recentEvents,
     incidentsBySeverity,
@@ -55,31 +55,31 @@ const getDashboardSummary = asyncHandler(async (req, res) => {
   ]);
 
   const socketStats = getSocketStats();
-  const simulator = getSimulatorState();
+  const simulatorState = getSimulatorState();
 
   res.status(200).json({
     success: true,
     data: {
-      workersTotal,
-      activeWorkers,
-      devicesTotal,
+      workersTotal: totalWorkerCount,
+      activeWorkers: activeWorkerCount,
+      devicesTotal: totalDeviceCount,
       devices: {
-        online: onlineDevices,
-        offline: offlineDevices,
+        online: activeDeviceCount,
+        offline: nonActiveDeviceCount,
       },
       incidents: {
-        open: openIncidents,
-        acknowledged: acknowledgedIncidents,
-        resolved: resolvedIncidents,
+        open: openIncidentCount,
+        acknowledged: acknowledgedIncidentCount,
+        resolved: resolvedIncidentCount,
       },
-      criticalEvents,
+      criticalEvents: criticalEventCount,
       visualization: {
         incidentsBySeverity,
         incidentsByDay,
       },
       systemHealth: {
         database: 'CONNECTED',
-        simulator,
+        simulator: simulatorState,
         clientsConnected: socketStats.clientsConnected,
         uptimeSeconds: Math.floor(process.uptime()),
       },

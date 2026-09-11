@@ -13,12 +13,13 @@ const { emitIncident, emitSafetyEvent } = require('./socketService');
 const SIMULATOR_MIN_MS = parseNumberEnv(process.env.SIMULATOR_MIN_MS, 15000);
 const SIMULATOR_MAX_MS = parseNumberEnv(process.env.SIMULATOR_MAX_MS, 20000);
 
-const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+const randomIntegerInRange = (minimum, maximum) =>
+  Math.floor(Math.random() * (maximum - minimum + 1)) + minimum;
 
-const pickRandom = (arr) => arr[randomInt(0, arr.length - 1)];
+const pickRandomItem = (items) => items[randomIntegerInRange(0, items.length - 1)];
 
-const buildMessage = (eventType, workerName, zone) => {
-  const messageMap = {
+const buildSafetyEventMessage = (eventType, workerName, zone) => {
+  const eventMessageTemplates = {
     HIGH_TEMPERATURE: `${workerName} reported unsafe body temperature near ${zone}`,
     LOW_BATTERY: `${workerName}'s wearable battery is critically low in ${zone}`,
     FALL_DETECTED: `Possible fall detected for ${workerName} at ${zone}`,
@@ -27,15 +28,15 @@ const buildMessage = (eventType, workerName, zone) => {
     SOS: `${workerName} triggered SOS emergency alert from ${zone}`,
   };
 
-  return messageMap[eventType];
+  return eventMessageTemplates[eventType];
 };
 
-const createIncidentFromEvent = async (savedEvent) => {
-  if (!INCIDENT_CREATING_SEVERITIES.includes(savedEvent.severity)) {
+const createIncidentFromEvent = async (createdEvent) => {
+  if (!INCIDENT_CREATING_SEVERITIES.includes(createdEvent.severity)) {
     return null;
   }
 
-  const worker = await Worker.findById(savedEvent.worker);
+  const worker = await Worker.findById(createdEvent.worker);
   const location = {
     zone: worker?.location?.zone || 'UNKNOWN',
     lat: worker?.location?.lat || 0,
@@ -43,13 +44,13 @@ const createIncidentFromEvent = async (savedEvent) => {
   };
 
   const incident = await Incident.create({
-    type: savedEvent.eventType,
-    title: `${savedEvent.eventType.replace('_', ' ')} incident`,
-    description: savedEvent.message,
-    severity: savedEvent.severity === 'CRITICAL' ? 'CRITICAL' : 'HIGH',
-    worker: savedEvent.worker,
-    device: savedEvent.device,
-    sourceEvent: savedEvent._id,
+    type: createdEvent.eventType,
+    title: `${createdEvent.eventType.replace('_', ' ')} incident`,
+    description: createdEvent.message,
+    severity: createdEvent.severity === 'CRITICAL' ? 'CRITICAL' : 'HIGH',
+    worker: createdEvent.worker,
+    device: createdEvent.device,
+    sourceEvent: createdEvent._id,
     location,
   });
 
@@ -66,22 +67,22 @@ const generateSafetyEvent = async () => {
     return;
   }
 
-  const worker = pickRandom(workers);
+  const worker = pickRandomItem(workers);
   const device = worker.assignedDevice;
 
   if (!device) {
     return;
   }
 
-  const eventType = pickRandom(EVENT_TYPES);
+  const eventType = pickRandomItem(EVENT_TYPES);
   const severity = EVENT_SEVERITY_MAP[eventType];
   const zone = worker.location?.zone || 'Unknown Zone';
 
   const metadata = {
-    batteryLevel: Math.max(5, device.batteryLevel - randomInt(0, 5)),
+    batteryLevel: Math.max(5, device.batteryLevel - randomIntegerInRange(0, 5)),
     temperature: Number((36 + Math.random() * 8).toFixed(1)),
     geofenceStatus: eventType === 'GEOFENCE_BREACH' ? 'OUTSIDE' : 'INSIDE',
-    movementScore: randomInt(0, 100),
+    movementScore: randomIntegerInRange(0, 100),
     location: {
       zone,
       lat: worker.location?.lat || 0,
@@ -92,7 +93,7 @@ const generateSafetyEvent = async () => {
   const event = await Event.create({
     eventType,
     severity,
-    message: buildMessage(eventType, worker.name, zone),
+    message: buildSafetyEventMessage(eventType, worker.name, zone),
     worker: worker._id,
     device: device._id,
     metadata,
@@ -111,43 +112,43 @@ const generateSafetyEvent = async () => {
   await createIncidentFromEvent(event);
 };
 
-let simulatorTimer;
+let simulationTimeoutHandle;
 let simulatorState = {
   isRunning: false,
   lastGeneratedAt: null,
   nextDelayMs: null,
 };
 
-const scheduleNext = () => {
-  const delay = randomInt(SIMULATOR_MIN_MS, SIMULATOR_MAX_MS);
-  simulatorState.nextDelayMs = delay;
+const scheduleNextSimulatedEvent = () => {
+  const nextEventDelayMs = randomIntegerInRange(SIMULATOR_MIN_MS, SIMULATOR_MAX_MS);
+  simulatorState.nextDelayMs = nextEventDelayMs;
 
-  simulatorTimer = setTimeout(async () => {
+  simulationTimeoutHandle = setTimeout(async () => {
     try {
       await generateSafetyEvent();
       simulatorState.lastGeneratedAt = new Date().toISOString();
     } catch (error) {
       console.error('Event simulator error:', error.message);
     } finally {
-      scheduleNext();
+      scheduleNextSimulatedEvent();
     }
-  }, delay);
+  }, nextEventDelayMs);
 };
 
 const startEventSimulator = () => {
-  if (simulatorTimer) {
+  if (simulationTimeoutHandle) {
     return;
   }
 
   simulatorState.isRunning = true;
   console.log('SafeOps event simulator started');
-  scheduleNext();
+  scheduleNextSimulatedEvent();
 };
 
 const stopEventSimulator = () => {
-  if (simulatorTimer) {
-    clearTimeout(simulatorTimer);
-    simulatorTimer = null;
+  if (simulationTimeoutHandle) {
+    clearTimeout(simulationTimeoutHandle);
+    simulationTimeoutHandle = null;
   }
 
   simulatorState = {
