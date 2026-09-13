@@ -308,3 +308,51 @@ status. This was corrected manually:
 3. Printed all 20 devices — every `assignedTo` value matched the correct `workerId`
    (SAFEOPS-1000 → W-101, …, SAFEOPS-1019 → W-120).
 4. Ran `npm run dev` — server started, existing endpoints unaffected.
+
+---
+
+## Task 7 – Dashboard and Data Improvements (Pagination and Status Alignment)
+
+### Date
+September 2026
+
+### Prompt used
+
+> Dashboard & Data Improvements
+>
+> Add Devices and Events pages
+> Paginate Incidents and Events (fetch 20 items per page using page & limit)
+> Align Worker and Device statuses to only ACTIVE / INACTIVE
+> Load Dashboard and Worker Device details from live API endpoints
+> Stop loading full collections — use pagination instead
+
+### What AI generated
+
+- Paginated `GET /api/incidents` with `page` (default 1) and `limit` (default 20, max 100).
+  Each page returns the next 20 most recent matching incidents via `skip` / `limit`.
+  Response includes `count`, `page`, `limit`, `total`, and `totalPages`.
+- Paginated `GET /api/events` the same way so the Events page does not load the
+  full events collection.
+- Normalized incident/event filter enums to uppercase so frontend values such as
+  `type=fall_detected` validate correctly.
+- Confirmed live endpoints already exist for dashboard, workers, and devices:
+  `GET /api/dashboard`, `GET /api/workers`, `GET /api/workers/:id`,
+  `GET /api/devices`, `GET /api/devices/:id`.
+- Devices and Events list pages live on the frontend; this backend supplies the
+  paginated and detail APIs those pages consume.
+
+### What was reviewed and changed
+
+- Worker status was already `ACTIVE` / `INACTIVE`. Device status still allowed
+  `MAINTENANCE`; that value was removed from the Device model, validators,
+  Swagger schemas, and route docs so both entities only use `ACTIVE` / `INACTIVE`.
+  `UNASSIGNED` remains only as a worker-list `deviceStatus` when no device is linked.
+- Simulator and seeder already skip event generation for inactive workers.
+
+### How validation was performed
+
+1. Ran `npm test` — all 8 tests passed, including incident list pagination checks.
+2. Confirmed `GET /api/incidents?page=1&limit=20` and `GET /api/events?page=2&limit=20`
+   return only one page of newest records plus `total` / `totalPages`.
+3. Confirmed worker and device status enums no longer include `OFFLINE`, `ON_BREAK`,
+   or `MAINTENANCE`.

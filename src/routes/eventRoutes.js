@@ -1,6 +1,7 @@
 const express = require('express');
-const { getRecentEvents } = require('../controllers/eventController');
+const { getRecentEvents, getEventById } = require('../controllers/eventController');
 const { requireAuth } = require('../middleware/authMiddleware');
+const validateObjectId = require('../middleware/validateObjectId');
 const validateRequest = require('../middleware/validateRequest');
 const { eventsQuerySchema } = require('../utils/validators');
 
@@ -102,5 +103,61 @@ const router = express.Router();
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.get('/', requireAuth, validateRequest(eventsQuerySchema), getRecentEvents);
+
+/**
+ * @openapi
+ * /api/events/{id}:
+ *   get:
+ *     tags: [Events]
+ *     summary: Get a single event by ID
+ *     description: |
+ *       Returns one safety event with worker and device populated.
+ *       Use this for the event details page instead of searching the paginated list.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           $ref: '#/components/schemas/ObjectId'
+ *         description: MongoDB ObjectId of the event
+ *         example: 6650f2a1c2e4b12345abcd02
+ *     responses:
+ *       200:
+ *         description: Event retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/Event'
+ *       400:
+ *         description: Invalid ObjectId
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Missing or invalid Bearer token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Event not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: Event not found
+ */
+router.get('/:id', requireAuth, validateObjectId(), getEventById);
 
 module.exports = router;

@@ -121,12 +121,14 @@ Authorization: Bearer <token>
 ### Incidents
 
 - `GET /api/incidents`
+- `GET /api/incidents/:id`
 - `POST /api/incidents/:id/acknowledge`
 - `POST /api/incidents/:id/resolve`
 
 ### Events
 
 - `GET /api/events`
+- `GET /api/events/:id`
 
 ### Dashboard
 

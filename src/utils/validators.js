@@ -7,7 +7,7 @@ const incidentStatuses = ['OPEN', 'ACKNOWLEDGED', 'RESOLVED'];
 const incidentSeverities = ['HIGH', 'CRITICAL'];
 const eventSeverities = ['WARNING', 'HIGH', 'CRITICAL'];
 const workerStatuses = ['ACTIVE', 'INACTIVE'];
-const deviceStatuses = ['ACTIVE', 'INACTIVE', 'MAINTENANCE'];
+const deviceStatuses = ['ACTIVE', 'INACTIVE'];
 
 const registerSchema = z.object({
   body: z.object({

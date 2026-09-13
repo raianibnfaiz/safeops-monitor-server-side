@@ -30,7 +30,7 @@ const router = express.Router();
  *         name: status
  *         schema:
  *           type: string
- *           enum: [ACTIVE, INACTIVE, MAINTENANCE]
+ *           enum: [ACTIVE, INACTIVE]
  *         description: Filter by device operational status
  *         example: ACTIVE
  *       - in: query

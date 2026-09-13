@@ -35,6 +35,19 @@ const getIncidents = asyncHandler(async (req, res) => {
   });
 });
 
+const getIncidentById = asyncHandler(async (req, res) => {
+  const incident = await Incident.findById(req.params.id).populate('worker device sourceEvent');
+
+  if (!incident) {
+    throw new AppError('Incident not found', 404);
+  }
+
+  res.status(200).json({
+    success: true,
+    data: incident,
+  });
+});
+
 const acknowledgeIncident = asyncHandler(async (req, res) => {
   const incident = await Incident.findById(req.params.id);
 
@@ -95,6 +108,7 @@ const resolveIncident = asyncHandler(async (req, res) => {
 
 module.exports = {
   getIncidents,
+  getIncidentById,
   acknowledgeIncident,
   resolveIncident,
 };

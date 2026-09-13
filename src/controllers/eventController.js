@@ -1,4 +1,5 @@
 const Event = require('../models/Event');
+const AppError = require('../utils/appError');
 const asyncHandler = require('../middleware/asyncHandler');
 
 const getRecentEvents = asyncHandler(async (req, res) => {
@@ -40,6 +41,20 @@ const getRecentEvents = asyncHandler(async (req, res) => {
   });
 });
 
+const getEventById = asyncHandler(async (req, res) => {
+  const event = await Event.findById(req.params.id).populate('worker device');
+
+  if (!event) {
+    throw new AppError('Event not found', 404);
+  }
+
+  res.status(200).json({
+    success: true,
+    data: event,
+  });
+});
+
 module.exports = {
   getRecentEvents,
+  getEventById,
 };

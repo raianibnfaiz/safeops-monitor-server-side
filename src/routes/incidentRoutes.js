@@ -1,6 +1,7 @@
 const express = require('express');
 const {
   getIncidents,
+  getIncidentById,
   acknowledgeIncident,
   resolveIncident,
 } = require('../controllers/incidentController');
@@ -114,6 +115,62 @@ const router = express.Router();
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.get('/', requireAuth, validateRequest(incidentsQuerySchema), getIncidents);
+
+/**
+ * @openapi
+ * /api/incidents/{id}:
+ *   get:
+ *     tags: [Incidents]
+ *     summary: Get a single incident by ID
+ *     description: |
+ *       Returns one incident with worker, device, and source event populated.
+ *       Use this for the incident details page instead of searching the paginated list.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           $ref: '#/components/schemas/ObjectId'
+ *         description: MongoDB ObjectId of the incident
+ *         example: 6650f2a1c2e4b12345abcd03
+ *     responses:
+ *       200:
+ *         description: Incident retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/Incident'
+ *       400:
+ *         description: Invalid ObjectId
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Missing or invalid Bearer token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Incident not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: Incident not found
+ */
+router.get('/:id', requireAuth, validateObjectId(), getIncidentById);
 
 /**
  * @openapi

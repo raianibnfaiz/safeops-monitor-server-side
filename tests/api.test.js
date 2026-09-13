@@ -13,6 +13,7 @@ describe('SafeOps backend API', () => {
   let mongoServer;
   let authToken;
   let incidentId;
+  let eventId;
 
   const registerAndLogin = async () => {
     const email = `admin+${Date.now()}@safeops.local`;
@@ -78,6 +79,7 @@ describe('SafeOps backend API', () => {
     });
 
     incidentId = incident._id.toString();
+    eventId = event._id.toString();
   };
 
   beforeAll(async () => {
@@ -165,6 +167,26 @@ describe('SafeOps backend API', () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.count).toBeGreaterThan(0);
+  });
+
+  test('returns a single incident by id', async () => {
+    const res = await request(app)
+      .get(`/api/incidents/${incidentId}`)
+      .set('Authorization', `Bearer ${authToken}`);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data._id).toBe(incidentId);
+  });
+
+  test('returns a single event by id', async () => {
+    const res = await request(app)
+      .get(`/api/events/${eventId}`)
+      .set('Authorization', `Bearer ${authToken}`);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data._id).toBe(eventId);
   });
 
   test('returns filtered incidents', async () => {

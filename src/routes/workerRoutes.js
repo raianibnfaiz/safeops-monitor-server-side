@@ -38,7 +38,7 @@ const router = express.Router();
  *         name: deviceStatus
  *         schema:
  *           type: string
- *           enum: [ACTIVE, INACTIVE, MAINTENANCE]
+ *           enum: [ACTIVE, INACTIVE]
  *         description: Filter workers by the status of their assigned device
  *         example: ACTIVE
  *       - in: query

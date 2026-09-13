@@ -113,7 +113,7 @@ const swaggerDefinition = {
           geofenceStatus: { type: 'string', enum: ['INSIDE', 'OUTSIDE'], example: 'INSIDE' },
           status: {
             type: 'string',
-            enum: ['ACTIVE', 'INACTIVE', 'MAINTENANCE'],
+            enum: ['ACTIVE', 'INACTIVE'],
             example: 'ACTIVE',
           },
           lastSeenAt: { type: 'string', format: 'date-time', example: '2026-09-09T07:30:00.000Z' },
@@ -138,7 +138,7 @@ const swaggerDefinition = {
           deviceId: { type: 'string', nullable: true, example: 'SAFEOPS-1000' },
           deviceStatus: {
             type: 'string',
-            enum: ['ACTIVE', 'INACTIVE', 'MAINTENANCE', 'UNASSIGNED'],
+            enum: ['ACTIVE', 'INACTIVE', 'UNASSIGNED'],
             example: 'ACTIVE',
           },
           assignedDevice: { $ref: '#/components/schemas/Device' },
