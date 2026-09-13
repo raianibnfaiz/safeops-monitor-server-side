@@ -16,6 +16,14 @@ const swaggerDefinition = {
   },
   servers: [
     {
+      url: '/',
+      description: 'Current host (local or deployed) — use this for Try it out',
+    },
+    {
+      url: process.env.SWAGGER_SERVER_URL || 'https://safeops-monitor-server-side.onrender.com',
+      description: 'Deployed remote server',
+    },
+    {
       url: 'http://localhost:5000',
       description: 'Local development server',
     },
@@ -357,4 +365,35 @@ const swaggerOptions = {
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
+const DEPLOYED_SERVER_URL =
+  process.env.SWAGGER_SERVER_URL || 'https://safeops-monitor-server-side.onrender.com';
+
+const buildSwaggerSpec = (req) => {
+  const forwardedProto = req.get('x-forwarded-proto');
+  const protocol = forwardedProto
+    ? forwardedProto.split(',')[0].trim()
+    : req.protocol || 'https';
+  const host = req.get('host');
+  const currentServerUrl = host ? `${protocol}://${host}` : '/';
+
+  return {
+    ...swaggerSpec,
+    servers: [
+      {
+        url: currentServerUrl,
+        description: 'Current host (local or deployed) — use this for Try it out',
+      },
+      {
+        url: DEPLOYED_SERVER_URL,
+        description: 'Deployed remote server',
+      },
+      {
+        url: 'http://localhost:5000',
+        description: 'Local development server',
+      },
+    ],
+  };
+};
+
 module.exports = swaggerSpec;
+module.exports.buildSwaggerSpec = buildSwaggerSpec;

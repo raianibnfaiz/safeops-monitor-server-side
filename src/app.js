@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
-const swaggerSpec = require('./config/swagger');
+const { buildSwaggerSpec } = require('./config/swagger');
 const workerRoutes = require('./routes/workerRoutes');
 const incidentRoutes = require('./routes/incidentRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
@@ -12,6 +12,8 @@ const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 app.use(
   cors({
     origin: '*',
@@ -21,13 +23,20 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve OpenAPI JSON first so Swagger UI on Vercel loads the live server list.
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(buildSwaggerSpec(req));
+});
+
 // ─── Swagger UI ───────────────────────────────────────────────────────────────
 app.use(
   '/api-docs',
   swaggerUi.serve,
-  swaggerUi.setup(swaggerSpec, {
+  swaggerUi.setup(null, {
     customSiteTitle: 'SafeOps Monitor API Docs',
     swaggerOptions: {
+      url: '/api-docs.json',
       persistAuthorization: true,
       displayRequestDuration: true,
       docExpansion: 'list',
@@ -36,12 +45,6 @@ app.use(
     },
   })
 );
-
-// Serve raw OpenAPI JSON for tooling (Postman import, code-gen, etc.)
-app.get('/api-docs.json', (req, res) => {
-  res.setHeader('Content-Type', 'application/json');
-  res.send(swaggerSpec);
-});
 
 // ─── API routes ───────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);

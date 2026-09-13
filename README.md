@@ -174,14 +174,27 @@ SafeOps Monitor includes interactive Swagger UI documentation powered by
 
 ### Swagger UI URL
 
+Local:
+
 ```
 http://localhost:5000/api-docs
 ```
+
+Deployed (Render):
+
+```
+https://safeops-monitor-server-side.onrender.com/api-docs
+```
+
+The server dropdown in Swagger lists the **current host first**, so Try it out runs against whichever origin you opened (local or remote). You can also pick **Deployed remote server** or **Local development**.
+
+Set `SWAGGER_SERVER_URL` on Render if the production URL changes.
 
 The raw OpenAPI JSON specification is also available at:
 
 ```
 http://localhost:5000/api-docs.json
+https://safeops-monitor-server-side.onrender.com/api-docs.json
 ```
 
 ### How to start the backend
@@ -194,7 +207,7 @@ Then open `http://localhost:5000/api-docs` in your browser.
 
 ### How to use Try it out (developers and testers)
 
-1. Open `http://localhost:5000/api-docs`.
+1. Open `http://localhost:5000/api-docs` locally, or `https://safeops-monitor-server-side.onrender.com/api-docs` on Render. In the **Servers** dropdown, keep the current host (or choose the deployed remote server).
 2. Register a user by expanding **POST /api/auth/register**, clicking **Try it out**, filling in `name`, `email`, and `password`, then clicking **Execute**.
 3. Copy the `token` value from the response body.
 4. Click the **Authorize** button (top right of the page), paste the token, and click **Authorize**.
