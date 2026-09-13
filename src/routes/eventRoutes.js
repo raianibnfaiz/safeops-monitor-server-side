@@ -20,12 +20,21 @@ const router = express.Router();
  *     tags: [Events]
  *     summary: List recent safety events
  *     description: |
- *       Returns safety events sorted newest first. Worker and device fields are populated.
- *       Events are generated automatically by the live simulator service.
- *       Use the limit, severity, eventType, and workerId parameters to filter results.
+ *       Returns safety events sorted newest first, one page at a time.
+ *       Defaults to page 1 with 20 events. Does not load the full collection.
+ *       Worker and device fields are populated.
+ *       Use the page, limit, severity, eventType, and workerId parameters to filter results.
  *     security:
  *       - bearerAuth: []
  *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Page number (1-based). Page 1 is the 20 most recent events.
+ *         example: 1
  *       - in: query
  *         name: limit
  *         schema:
@@ -33,7 +42,7 @@ const router = express.Router();
  *           minimum: 1
  *           maximum: 100
  *           default: 20
- *         description: Maximum number of events to return (1–100)
+ *         description: Events per page (default 20)
  *         example: 20
  *       - in: query
  *         name: severity
@@ -69,6 +78,18 @@ const router = express.Router();
  *                 count:
  *                   type: integer
  *                   example: 20
+ *                 page:
+ *                   type: integer
+ *                   example: 1
+ *                 limit:
+ *                   type: integer
+ *                   example: 20
+ *                 total:
+ *                   type: integer
+ *                   example: 3500
+ *                 totalPages:
+ *                   type: integer
+ *                   example: 175
  *                 data:
  *                   type: array
  *                   items:

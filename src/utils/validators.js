@@ -75,9 +75,10 @@ const eventsQuerySchema = z.object({
   body: z.object({}),
   params: z.object({}),
   query: z.object({
+    page: z.coerce.number().int().min(1).optional(),
     limit: z.coerce.number().int().min(1).max(100).optional(),
-    severity: z.enum(eventSeverities).optional(),
-    eventType: z.enum(EVENT_TYPES).optional(),
+    severity: optionalUppercaseEnum(eventSeverities),
+    eventType: optionalUppercaseEnum(EVENT_TYPES),
     workerId: z.string().regex(objectIdRegex, 'workerId must be a valid ObjectId').optional(),
   }),
 });
