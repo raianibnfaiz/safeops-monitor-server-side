@@ -31,7 +31,7 @@ const router = express.Router();
  *         name: status
  *         schema:
  *           type: string
- *           enum: [ACTIVE, OFFLINE, ON_BREAK]
+ *           enum: [ACTIVE, INACTIVE]
  *         description: Filter workers by operational status
  *         example: ACTIVE
  *       - in: query

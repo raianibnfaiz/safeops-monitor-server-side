@@ -20,7 +20,7 @@ const workerSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['ACTIVE', 'OFFLINE', 'ON_BREAK'],
+      enum: ['ACTIVE', 'INACTIVE'],
       default: 'ACTIVE',
     },
     location: {

@@ -11,6 +11,15 @@ const deviceSchema = new mongoose.Schema(
     worker: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Worker',
+      unique: true,
+      sparse: true,
+    },
+    // Human-readable identifier of the assigned worker (e.g. "W-101").
+    // Mirrors Device.worker for quick lookups without a populate() call.
+    assignedTo: {
+      type: String,
+      trim: true,
+      default: null,
     },
     batteryLevel: {
       type: Number,

@@ -35,7 +35,13 @@ const getWorkers = asyncHandler(async (req, res) => {
     lastActivity: worker.assignedDevice?.lastSeenAt || worker.updatedAt,
     batteryLevel: worker.assignedDevice?.batteryLevel ?? null,
     deviceId: worker.assignedDevice?.deviceId || null,
-    deviceStatus: worker.assignedDevice?.status || 'UNASSIGNED',
+    // If the worker is inactive their device is treated as inactive regardless of its
+    // stored status, preventing an active-device / inactive-worker mismatch.
+    deviceStatus: !worker.assignedDevice
+      ? 'UNASSIGNED'
+      : worker.status === 'INACTIVE'
+        ? 'INACTIVE'
+        : worker.assignedDevice.status,
     assignedDevice: worker.assignedDevice,
   }));
 

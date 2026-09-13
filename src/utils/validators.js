@@ -6,7 +6,7 @@ const objectIdRegex = /^[a-fA-F0-9]{24}$/;
 const incidentStatuses = ['OPEN', 'ACKNOWLEDGED', 'RESOLVED'];
 const incidentSeverities = ['HIGH', 'CRITICAL'];
 const eventSeverities = ['WARNING', 'HIGH', 'CRITICAL'];
-const workerStatuses = ['ACTIVE', 'OFFLINE', 'ON_BREAK'];
+const workerStatuses = ['ACTIVE', 'INACTIVE'];
 const deviceStatuses = ['ACTIVE', 'INACTIVE', 'MAINTENANCE'];
 
 const registerSchema = z.object({

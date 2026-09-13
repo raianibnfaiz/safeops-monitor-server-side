@@ -241,3 +241,70 @@ September 2026
 4. Confirmed Swagger Curl section generates the correct command for each request.
 5. Tested failure scenarios: no token → 401, invalid ObjectId → 400, duplicate email → 409.
 6. Ran `npm test` — all 8 tests passed with no regressions.
+
+---
+
+## Task 6 – Realistic Seed Data (20 Workers / 20 Devices) and Device assignedTo Property
+
+### Date
+September 2026
+
+### Prompt used
+
+> Use realistic seeded data, for example 10-20 workers, 10-20 devices, 50+ historical
+> events, and 10+ incidents. The candidate should explain the schema and why the
+> relationships were chosen. As the requirements say 10-20 workers and 10-20 devices,
+> in my project these amounts of devices and workers data needed to be added in the
+> database and also should be implemented this way that one worker is assigned to only
+> one specific device. So implement this way and send the update data to mongodb database.
+>
+> Update the device list to include an assignedTo property that stores the unique ID
+> of the worker assigned to each device. This will allow us to clearly identify which
+> device is assigned to which worker directly from the device list.
+
+### What AI generated
+
+- Expanded `sampleWorkers` in `bootstrapService.js` from 12 to **20 named workers**
+  across five zones (ZONE-A through ZONE-E) with realistic roles (Welder, Operator,
+  Inspector, Forklift Driver, Technician, Supervisor, Assembler, Mechanic, Safety
+  Officer, Electrician, Quality Control, Scaffolder, Crane Operator).
+- Added `unique: true` and `sparse: true` to `Device.worker` in the Mongoose schema
+  so the database itself enforces the one-worker-per-device rule.
+- Added `assignedTo: String` field to the `Device` schema to store the human-readable
+  worker ID (e.g. `"W-101"`) alongside the ObjectId reference in `Device.worker`.
+- Seeder populates `assignedTo` with `worker.workerId` at device creation time so
+  clients can identify the assigned worker from the device list without a `populate()`
+  call.
+- Increased historical events from 60 to **80** and incidents cap from 15 to **20**.
+- Updated `scripts/seed.js` to `deleteMany` all four collections before re-seeding,
+  making `npm run seed` safely re-runnable at any time.
+
+### What was reviewed and changed
+
+- Chose `String` (not ObjectId) for `assignedTo` so the value is human-readable in
+  API responses and MongoDB Atlas UI without a join.
+- Chose `sparse: true` on the unique index so devices not yet assigned to a worker
+  do not conflict with each other.
+- Verified the seeder builds a `deviceByWorkerId` lookup map so each event/incident
+  always uses the correct device for its worker — no random device mis-assignment.
+- Kept `Worker.assignedDevice` (ObjectId back-link) intact for reverse lookups.
+
+**Developer fix (not AI-generated):** The AI did not align the device status with the worker
+status. This was corrected manually:
+- Worker status enum was narrowed to only `ACTIVE` and `INACTIVE`.
+- The seeder was updated to set `device.status = 'INACTIVE'` whenever the assigned
+  worker's status is `INACTIVE`, removing the active-device / inactive-worker mismatch.
+- Both `deviceController.js` and `workerController.js` were updated to derive the
+  effective device status at response time: if the worker is `INACTIVE` the device
+  is reported as `INACTIVE` regardless of its stored value, as a safety net for any
+  future data inconsistencies.
+- All enum references in `validators.js`, `swagger.js`, and JSDoc annotations in
+  `workerRoutes.js` were updated to reflect the two-value status model.
+
+### How validation was performed
+
+1. Ran `npm run seed` — output: `20 workers, 20 devices, 80 events, 20 incidents`.
+2. Queried Atlas: `duplicateWorkerAssignments: 0` confirming the 1:1 constraint holds.
+3. Printed all 20 devices — every `assignedTo` value matched the correct `workerId`
+   (SAFEOPS-1000 → W-101, …, SAFEOPS-1019 → W-120).
+4. Ran `npm run dev` — server started, existing endpoints unaffected.
