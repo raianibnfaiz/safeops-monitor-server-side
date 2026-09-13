@@ -174,6 +174,9 @@ describe('SafeOps backend API', () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
+    expect(res.body.page).toBe(1);
+    expect(res.body.limit).toBe(20);
+    expect(res.body.count).toBeLessThanOrEqual(20);
     expect(res.body.data.every((item) => item.status === 'OPEN')).toBe(true);
   });
 

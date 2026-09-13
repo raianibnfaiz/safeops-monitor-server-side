@@ -25,12 +25,30 @@ const router = express.Router();
  *     tags: [Incidents]
  *     summary: List incidents with optional filters
  *     description: |
- *       Returns incidents sorted newest first.
+ *       Returns incidents sorted newest first, one page at a time.
+ *       Defaults to page 1 with 20 incidents. Does not load the full collection.
  *       Worker, device, and source event fields are fully populated.
  *       Use the status, severity, type, and workerId query parameters to narrow results.
  *     security:
  *       - bearerAuth: []
  *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Page number (1-based). Page 1 is the 20 most recent incidents.
+ *         example: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 20
+ *         description: Incidents per page (default 20)
+ *         example: 20
  *       - in: query
  *         name: status
  *         schema:
@@ -71,7 +89,19 @@ const router = express.Router();
  *                   example: true
  *                 count:
  *                   type: integer
- *                   example: 4
+ *                   example: 20
+ *                 page:
+ *                   type: integer
+ *                   example: 1
+ *                 limit:
+ *                   type: integer
+ *                   example: 20
+ *                 total:
+ *                   type: integer
+ *                   example: 3000
+ *                 totalPages:
+ *                   type: integer
+ *                   example: 150
  *                 data:
  *                   type: array
  *                   items:

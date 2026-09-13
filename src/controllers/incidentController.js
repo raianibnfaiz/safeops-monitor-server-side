@@ -5,6 +5,9 @@ const { emitIncident } = require('../services/socketService');
 
 const getIncidents = asyncHandler(async (req, res) => {
   const { status, severity, type, workerId: workerObjectId } = req.query;
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
   const filter = {};
 
   if (status) filter.status = status;
@@ -12,13 +15,22 @@ const getIncidents = asyncHandler(async (req, res) => {
   if (type) filter.type = type;
   if (workerObjectId) filter.worker = workerObjectId;
 
-  const incidents = await Incident.find(filter)
-    .populate('worker device sourceEvent')
-    .sort({ createdAt: -1 });
+  const [incidents, total] = await Promise.all([
+    Incident.find(filter)
+      .populate('worker device sourceEvent')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    Incident.countDocuments(filter),
+  ]);
 
   res.status(200).json({
     success: true,
     count: incidents.length,
+    page,
+    limit,
+    total,
+    totalPages: Math.ceil(total / limit) || 0,
     data: incidents,
   });
 });

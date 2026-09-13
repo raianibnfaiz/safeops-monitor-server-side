@@ -90,10 +90,18 @@ const ensureBaselineData = async () => {
   );
 
   // ── 4. Insert 80 historical events spread over the last 7 days ────────────
+  // Only ACTIVE workers can generate events; inactive workers stay assigned to
+  // devices but produce no telemetry.
+  const activeWorkers = workers.filter((worker) => worker.status === 'ACTIVE');
   const historicalEvents = [];
 
+  if (activeWorkers.length === 0) {
+    console.log('No ACTIVE workers available; skipping historical events and incidents');
+    return;
+  }
+
   for (let eventIndex = 0; eventIndex < 80; eventIndex += 1) {
-    const worker        = pickRandomItem(workers);
+    const worker        = pickRandomItem(activeWorkers);
     const assignedDevice = deviceByWorkerId[String(worker._id)];
     const eventType     = pickRandomItem(EVENT_TYPES);
     const severity      = EVENT_SEVERITY_MAP[eventType];

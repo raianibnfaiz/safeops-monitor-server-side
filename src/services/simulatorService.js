@@ -61,7 +61,7 @@ const createIncidentFromEvent = async (createdEvent) => {
 };
 
 const generateSafetyEvent = async () => {
-  const workers = await Worker.find({}).populate('assignedDevice');
+  const workers = await Worker.find({ status: 'ACTIVE' }).populate('assignedDevice');
 
   if (!workers.length) {
     return;
@@ -70,7 +70,8 @@ const generateSafetyEvent = async () => {
   const worker = pickRandomItem(workers);
   const device = worker.assignedDevice;
 
-  if (!device) {
+  // Inactive workers must never produce live events, even if still assigned a device.
+  if (!device || worker.status === 'INACTIVE') {
     return;
   }
 

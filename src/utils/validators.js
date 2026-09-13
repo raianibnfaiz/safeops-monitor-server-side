@@ -38,14 +38,22 @@ const workersQuerySchema = z.object({
   }),
 });
 
+const optionalUppercaseEnum = (allowedValues) =>
+  z.preprocess(
+    (value) => (typeof value === 'string' ? value.trim().toUpperCase() : value),
+    z.enum(allowedValues).optional()
+  );
+
 const incidentsQuerySchema = z.object({
   body: z.object({}),
   params: z.object({}),
   query: z.object({
-    status: z.enum(incidentStatuses).optional(),
-    severity: z.enum(incidentSeverities).optional(),
-    type: z.enum(EVENT_TYPES).optional(),
+    status: optionalUppercaseEnum(incidentStatuses),
+    severity: optionalUppercaseEnum(incidentSeverities),
+    type: optionalUppercaseEnum(EVENT_TYPES),
     workerId: z.string().regex(objectIdRegex, 'workerId must be a valid ObjectId').optional(),
+    page: z.coerce.number().int().min(1).optional(),
+    limit: z.coerce.number().int().min(1).max(100).optional(),
   }),
 });
 
