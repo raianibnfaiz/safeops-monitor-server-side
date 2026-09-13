@@ -46,6 +46,25 @@ app.use(
   })
 );
 
+const apiIndex = (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'SafeOps Monitor API is running',
+    docs: '/api-docs',
+    endpoints: {
+      auth: '/api/auth',
+      workers: '/api/workers',
+      devices: '/api/devices',
+      incidents: '/api/incidents',
+      events: '/api/events',
+      dashboard: '/api/dashboard',
+    },
+  });
+};
+
+app.get('/', apiIndex);
+app.get('/api', apiIndex);
+
 // ─── API routes ───────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/workers', workerRoutes);
